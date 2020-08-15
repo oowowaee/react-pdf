@@ -34,7 +34,7 @@ const register = (src, data) => {
   }
 };
 
-const getRegisteredFonts = () => fonts;
+export const getRegisteredFonts = () => fonts;
 
 const getRegisteredFontFamilies = () => Object.keys(fonts);
 

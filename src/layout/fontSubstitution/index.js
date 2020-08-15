@@ -1,16 +1,13 @@
 import { pathOr, last } from 'ramda';
 
 import StandardFont from './standardFont';
+import { getRegisteredFonts } from '../../font';
 
 const fontCache = {};
 
 const IGNORED_CODE_POINTS = [173];
 
 const getFontSize = pathOr(12, ['attributes', 'fontSize']);
-
-const getFallbackFont = () => {
-  return getOrCreateFont('Helvetica');
-};
 
 const getOrCreateFont = name => {
   if (fontCache[name]) return fontCache[name];
@@ -21,20 +18,35 @@ const getOrCreateFont = name => {
   return font;
 };
 
-const shouldFallbackToFont = (codePoint, font) => {
+const shouldFallbackToFont = (codePoint, font, fallback) => {
   return (
     !IGNORED_CODE_POINTS.includes(codePoint) &&
     !font.hasGlyphForCodePoint(codePoint) &&
-    getFallbackFont().hasGlyphForCodePoint(codePoint)
+    fallback.hasGlyphForCodePoint(codePoint)
   );
 };
 
-const fontSubstitution = () => ({ string, runs }) => {
+// Reverse the word order and reprocess - this will only work for
+// single line strings
+const reverseAndProcessRuns = (string, runs) => {
+  const reversedString = string
+    .split(' ')
+    .reverse()
+    .join(' ');
+
+  return processRuns(reversedString, runs, true);
+};
+
+const processRuns = (string, runs, isReversed = false) => {
   let lastFont = null;
   let lastIndex = 0;
   let index = 0;
+  let font;
 
-  const res = [];
+  const results = [];
+
+  const arabicFont = getRegisteredFonts()['Arabic'].sources[0].data;
+  const koreanFont = getRegisteredFonts()['Korean'].sources[0].data;
 
   for (const run of runs) {
     const fontSize = getFontSize(run);
@@ -44,19 +56,39 @@ const fontSubstitution = () => ({ string, runs }) => {
         : run.attributes.font;
 
     if (string.length === 0) {
-      res.push({ start: 0, end: 0, attributes: { font: defaultFont } });
+      results.push({ start: 0, end: 0, attributes: { font: defaultFont } });
       break;
     }
 
     for (const char of string.slice(run.start, run.end)) {
       const codePoint = char.codePointAt();
-      const shouldFallback = shouldFallbackToFont(codePoint, defaultFont);
-      const font = shouldFallback ? getFallbackFont() : defaultFont;
+
+      if (isReversed) {
+        font = arabicFont;
+      } else {
+        const fallbackToArabic = shouldFallbackToFont(
+          codePoint,
+          defaultFont,
+          arabicFont,
+        );
+        const fallbackToKorean =
+          !fallbackToArabic &&
+          shouldFallbackToFont(codePoint, defaultFont, koreanFont);
+
+        if (fallbackToArabic) {
+          // We are assuming that if we EVER fallback to Arabic, the entire string should be in Arabic
+          return reverseAndProcessRuns(string, runs);
+        } else if (fallbackToKorean) {
+          font = koreanFont;
+        } else {
+          font = defaultFont;
+        }
+      }
 
       // If the default font does not have a glyph and the fallback font does, we use it
       if (font !== lastFont) {
         if (lastFont) {
-          res.push({
+          results.push({
             start: lastIndex,
             end: index,
             attributes: {
@@ -74,10 +106,16 @@ const fontSubstitution = () => ({ string, runs }) => {
     }
   }
 
+  return { results, lastFont, lastIndex };
+};
+
+const fontSubstitution = () => ({ string, runs }) => {
+  const { results, lastFont, lastIndex } = processRuns(string, runs);
+
   if (lastIndex < string.length) {
     const fontSize = getFontSize(last(runs));
 
-    res.push({
+    results.push({
       start: lastIndex,
       end: string.length,
       attributes: {
@@ -87,7 +125,7 @@ const fontSubstitution = () => ({ string, runs }) => {
     });
   }
 
-  return { string, runs: res };
+  return { string, runs: results };
 };
 
 export default fontSubstitution;
