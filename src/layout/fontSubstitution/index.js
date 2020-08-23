@@ -46,6 +46,7 @@ const processRuns = (string, runs, isReversed = false) => {
   const results = [];
 
   const arabicFont = getRegisteredFonts()['Arabic'].sources[0].data;
+  const chineseFont = getRegisteredFonts()['Chinese'].sources[0].data;
   const koreanFont = getRegisteredFonts()['Korean'].sources[0].data;
 
   for (const run of runs) {
@@ -71,8 +72,16 @@ const processRuns = (string, runs, isReversed = false) => {
           defaultFont,
           arabicFont,
         );
+
+        // Fallback to Chinese first, because the Korean font contains some
+        // Chinese glyphs and you'll get 2 fonts
+        const fallbackToChinese =
+          !fallbackToArabic &&
+          shouldFallbackToFont(codePoint, defaultFont, chineseFont);
+
         const fallbackToKorean =
           !fallbackToArabic &&
+          !fallbackToChinese &&
           shouldFallbackToFont(codePoint, defaultFont, koreanFont);
 
         if (fallbackToArabic) {
@@ -80,6 +89,8 @@ const processRuns = (string, runs, isReversed = false) => {
           return reverseAndProcessRuns(string, runs);
         } else if (fallbackToKorean) {
           font = koreanFont;
+        } else if (fallbackToChinese) {
+          font = chineseFont;
         } else {
           font = defaultFont;
         }

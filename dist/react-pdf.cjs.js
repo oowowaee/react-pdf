@@ -2759,7 +2759,8 @@ const getOrCreateFont = name => {
 
 const shouldFallbackToFont = (codePoint, font, fallback) => {
   return !IGNORED_CODE_POINTS.includes(codePoint) && !font.hasGlyphForCodePoint(codePoint) && fallback.hasGlyphForCodePoint(codePoint);
-}; // Reverse the word order and
+}; // Reverse the word order and reprocess - this will only work for
+// single line strings
 
 
 const reverseAndProcessRuns = (string, runs) => {
@@ -2773,7 +2774,8 @@ const processRuns = (string, runs, isReversed = false) => {
   let index = 0;
   let font;
   const results = [];
-  const arabicFont = getRegisteredFonts()['Cairo'].sources[0].data;
+  const arabicFont = getRegisteredFonts()['Arabic'].sources[0].data;
+  const chineseFont = getRegisteredFonts()['Chinese'].sources[0].data;
   const koreanFont = getRegisteredFonts()['Korean'].sources[0].data;
 
   for (const run of runs) {
@@ -2797,14 +2799,19 @@ const processRuns = (string, runs, isReversed = false) => {
       if (isReversed) {
         font = arabicFont;
       } else {
-        const fallbackToArabic = shouldFallbackToFont(codePoint, defaultFont, arabicFont);
-        const fallbackToKorean = !fallbackToArabic && shouldFallbackToFont(codePoint, defaultFont, koreanFont);
+        const fallbackToArabic = shouldFallbackToFont(codePoint, defaultFont, arabicFont); // Fallback to Chinese first, because the Korean font contains some
+        // Chinese glyphs and you'll get 2 fonts
+
+        const fallbackToChinese = !fallbackToArabic && shouldFallbackToFont(codePoint, defaultFont, chineseFont);
+        const fallbackToKorean = !fallbackToArabic && !fallbackToChinese && shouldFallbackToFont(codePoint, defaultFont, koreanFont);
 
         if (fallbackToArabic) {
           // We are assuming that if we EVER fallback to Arabic, the entire string should be in Arabic
           return reverseAndProcessRuns(string, runs);
         } else if (fallbackToKorean) {
           font = koreanFont;
+        } else if (fallbackToChinese) {
+          font = chineseFont;
         } else {
           font = defaultFont;
         }

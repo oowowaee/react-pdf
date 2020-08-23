@@ -3200,7 +3200,8 @@ var getOrCreateFont = function getOrCreateFont(name) {
 
 var shouldFallbackToFont = function shouldFallbackToFont(codePoint, font, fallback) {
   return !IGNORED_CODE_POINTS.includes(codePoint) && !font.hasGlyphForCodePoint(codePoint) && fallback.hasGlyphForCodePoint(codePoint);
-}; // Reverse the word order and
+}; // Reverse the word order and reprocess - this will only work for
+// single line strings
 
 
 var reverseAndProcessRuns = function reverseAndProcessRuns(string, runs) {
@@ -3218,7 +3219,8 @@ var processRuns = function processRuns(string, runs, isReversed) {
   var index = 0;
   var font;
   var results = [];
-  var arabicFont = getRegisteredFonts()['Cairo'].sources[0].data;
+  var arabicFont = getRegisteredFonts()['Arabic'].sources[0].data;
+  var chineseFont = getRegisteredFonts()['Chinese'].sources[0].data;
   var koreanFont = getRegisteredFonts()['Korean'].sources[0].data;
 
   for (var _iterator = _createForOfIteratorHelperLoose(runs), _step; !(_step = _iterator()).done;) {
@@ -3245,14 +3247,19 @@ var processRuns = function processRuns(string, runs, isReversed) {
       if (isReversed) {
         font = arabicFont;
       } else {
-        var fallbackToArabic = shouldFallbackToFont(codePoint, defaultFont, arabicFont);
-        var fallbackToKorean = !fallbackToArabic && shouldFallbackToFont(codePoint, defaultFont, koreanFont);
+        var fallbackToArabic = shouldFallbackToFont(codePoint, defaultFont, arabicFont); // Fallback to Chinese first, because the Korean font contains some
+        // Chinese glyphs and you'll get 2 fonts
+
+        var fallbackToChinese = !fallbackToArabic && shouldFallbackToFont(codePoint, defaultFont, chineseFont);
+        var fallbackToKorean = !fallbackToArabic && !fallbackToChinese && shouldFallbackToFont(codePoint, defaultFont, koreanFont);
 
         if (fallbackToArabic) {
           // We are assuming that if we EVER fallback to Arabic, the entire string should be in Arabic
           return reverseAndProcessRuns(string, runs);
         } else if (fallbackToKorean) {
           font = koreanFont;
+        } else if (fallbackToChinese) {
+          font = chineseFont;
         } else {
           font = defaultFont;
         }
