@@ -3219,9 +3219,9 @@ var processRuns = function processRuns(string, runs, isReversed) {
   var index = 0;
   var font;
   var results = [];
-  var arabicFont = getRegisteredFonts()['Arabic'].sources[0].data;
-  var chineseFont = getRegisteredFonts()['Chinese'].sources[0].data;
-  var koreanFont = getRegisteredFonts()['Korean'].sources[0].data;
+  var arabicFont = Font$1.getRegisteredFonts()['Arabic'].sources[0].data;
+  var chineseFont = Font$1.getRegisteredFonts()['Chinese'].sources[0].data;
+  var koreanFont = Font$1.getRegisteredFonts()['Korean'].sources[0].data;
 
   for (var _iterator = _createForOfIteratorHelperLoose(runs), _step; !(_step = _iterator()).done;) {
     var run = _step.value;

@@ -2767,9 +2767,9 @@ const processRuns = (string, runs, isReversed = false) => {
   let index = 0;
   let font;
   const results = [];
-  const arabicFont = getRegisteredFonts()['Arabic'].sources[0].data;
-  const chineseFont = getRegisteredFonts()['Chinese'].sources[0].data;
-  const koreanFont = getRegisteredFonts()['Korean'].sources[0].data;
+  const arabicFont = Font$1.getRegisteredFonts()['Arabic'].sources[0].data;
+  const chineseFont = Font$1.getRegisteredFonts()['Chinese'].sources[0].data;
+  const koreanFont = Font$1.getRegisteredFonts()['Korean'].sources[0].data;
 
   for (const run of runs) {
     const fontSize = getFontSize(run);

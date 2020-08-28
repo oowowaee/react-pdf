@@ -1,7 +1,7 @@
 import { pathOr, last } from 'ramda';
 
 import StandardFont from './standardFont';
-import { getRegisteredFonts } from '../../font';
+import Font from '../../font';
 
 const fontCache = {};
 
@@ -45,9 +45,9 @@ const processRuns = (string, runs, isReversed = false) => {
 
   const results = [];
 
-  const arabicFont = getRegisteredFonts()['Arabic'].sources[0].data;
-  const chineseFont = getRegisteredFonts()['Chinese'].sources[0].data;
-  const koreanFont = getRegisteredFonts()['Korean'].sources[0].data;
+  const arabicFont = Font.getRegisteredFonts()['Arabic'].sources[0].data;
+  const chineseFont = Font.getRegisteredFonts()['Chinese'].sources[0].data;
+  const koreanFont = Font.getRegisteredFonts()['Korean'].sources[0].data;
 
   for (const run of runs) {
     const fontSize = getFontSize(run);
