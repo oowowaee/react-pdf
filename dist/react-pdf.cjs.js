@@ -2758,6 +2758,7 @@ const getOrCreateFont = name => {
 };
 
 const shouldFallbackToFont = (codePoint, font, fallback) => {
+  if (!fallback) return false;
   return !IGNORED_CODE_POINTS.includes(codePoint) && !font.hasGlyphForCodePoint(codePoint) && fallback.hasGlyphForCodePoint(codePoint);
 }; // Reverse the word order and reprocess - this will only work for
 // single line strings
